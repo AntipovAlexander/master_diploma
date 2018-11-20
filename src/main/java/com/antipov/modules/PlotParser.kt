@@ -11,7 +11,7 @@ class PlotParser {
 
     fun parse(filePath: String): ArrayList<Float> {
         try {
-            val image = ImageIO.read(File(filePath))
+            val image = ImageIO.read(File(javaClass.classLoader.getResource(filePath).file))
             marchThroughImage(image)
         } catch (e: IOException) {
             System.err.println(e.message)
