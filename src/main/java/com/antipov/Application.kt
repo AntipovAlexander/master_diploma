@@ -8,6 +8,10 @@ class Application {
     companion object {
         private const val RESULT_FILENAME = "results.tsv"
 
+        private const val RED_NAME = "Ток. АТК"
+        private const val BLACK_NAME = "Скор. АЗЦК"
+        private const val BLUE_NAME = "ЭДС"
+
         private lateinit var writer: BufferedWriter
         private lateinit var fWriter: FileWriter
 
@@ -34,7 +38,7 @@ class Application {
         private fun writePlotsToResults() {
             // assuming that vectors lengths are equal
             writer.write("Parsed plots\n")
-            writer.write("Red\tBlack\tblue\n")
+            writer.write("$RED_NAME\t$BLACK_NAME\t$BLUE_NAME\n")
             i.forEachIndexed { index, it ->
                 writer.write("$it\t${j[index]}\t${k[index]}\n")
             }
