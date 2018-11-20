@@ -1,12 +1,16 @@
 package com.antipov
 
+import com.antipov.modules.Autocorrelation
+import com.antipov.modules.Dispersion
+import com.antipov.modules.MathExpectation
 import com.antipov.modules.PlotParser
+import com.antipov.utils.comma
 import java.io.BufferedWriter
 import java.io.FileWriter
 
 class Application {
     companion object {
-        private const val RESULT_FILENAME = "results.tsv"
+        private const val PLOTS_FILENAME = "plots.tsv"
 
         private const val RED_NAME = "Ток. АТК"
         private const val BLACK_NAME = "Скор. АЗЦК"
@@ -21,13 +25,60 @@ class Application {
         private val j = arrayListOf<Float>() // means Скор. АЗЦК
         private val k = arrayListOf<Float>() // means ЭДС
 
+        // math expectations
+        private var mxI: Float = 0.0f
+        private var mxJ: Float = 0.0f
+        private var mxK: Float = 0.0f
+
+        // dispersions
+        private var dispI: Float = 0.0f
+        private var dispJ: Float = 0.0f
+        private var dispK: Float = 0.0f
+
+        // auto correlation vectors
+        private val autoI = arrayListOf<Float>()
+        private val autoJ = arrayListOf<Float>()
+        private val autoK = arrayListOf<Float>()
+
         @JvmStatic
         fun main(args: Array<String>) {
             initFileWriter()
+
             parsePlots()
             writePlotsToResults()
             initTimeLine()
+            calculateMathExpectation()
+            calculateDispersion()
+            calculateAutoCorrelation()
+            writeAutoCorrelationToResults()
             closeFileWriter()
+        }
+
+        private fun writeAutoCorrelationToResults() {
+            // assuming that vectors lengths are equal
+            writer.write("Auto Correlation\n")
+            writer.write("$RED_NAME\t$BLACK_NAME\t$BLUE_NAME\n")
+            autoI.forEachIndexed { index, it ->
+                writer.write("${it.comma()}\t${autoJ[index].comma()}\t${autoK[index].comma()}\n")
+            }
+        }
+
+        private fun calculateDispersion() {
+            dispI = Dispersion().calculate(mxI, i)
+            dispJ = Dispersion().calculate(mxJ, j)
+            dispK = Dispersion().calculate(mxK, k)
+        }
+
+        private fun calculateMathExpectation() {
+            mxI = MathExpectation().calculate(i)
+            mxJ = MathExpectation().calculate(j)
+            mxK = MathExpectation().calculate(k)
+        }
+
+        private fun calculateAutoCorrelation() {
+            autoI.addAll(Autocorrelation().calculate(mxI, dispI, i))
+            autoJ.addAll(Autocorrelation().calculate(mxJ, dispJ, j))
+            autoK.addAll(Autocorrelation().calculate(mxK, dispK, k))
         }
 
         private fun closeFileWriter() {
@@ -40,12 +91,12 @@ class Application {
             writer.write("Parsed plots\n")
             writer.write("$RED_NAME\t$BLACK_NAME\t$BLUE_NAME\n")
             i.forEachIndexed { index, it ->
-                writer.write("$it\t${j[index]}\t${k[index]}\n")
+                writer.write("${it.comma()}\t${j[index].comma()}\t${k[index].comma()}\n")
             }
         }
 
         private fun initFileWriter() {
-            fWriter = FileWriter(RESULT_FILENAME, false)
+            fWriter = FileWriter(PLOTS_FILENAME, false)
             writer = BufferedWriter(fWriter)
         }
 
