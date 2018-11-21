@@ -2,6 +2,9 @@ package com.antipov
 
 import com.antipov.modules.*
 import com.antipov.utils.printTable
+import org.apache.commons.math3.transform.DftNormalization
+import org.apache.commons.math3.transform.FastFourierTransformer
+import org.apache.commons.math3.transform.TransformType
 import java.io.BufferedWriter
 import java.io.FileWriter
 
@@ -10,6 +13,7 @@ class Application {
         private const val PLOTS_FILENAME = "plots.tsv"
         private const val AUTOCORRELATION_FILENAME = "autocorrelation.tsv"
         private const val MUTUALCORRELATION_FILENAME = "mutualcorrelation.tsv"
+        private const val SPECTRALDENSITY_FILENAME = "spectraldensity.tsv"
 
         private const val RED_NAME = "Ток. АТК"
         private const val BLACK_NAME = "Скор. АЗЦК"
@@ -49,6 +53,11 @@ class Application {
         private val mutualKtoJ = arrayListOf<Float>()
         private val mutualKtoI = arrayListOf<Float>()
 
+        // spectral density
+        private val spectralDensityI = arrayListOf<Float>()
+        private val spectralDensityJ = arrayListOf<Float>()
+        private val spectralDensityK = arrayListOf<Float>()
+
         @JvmStatic
         fun main(args: Array<String>) {
             parsePlots()
@@ -63,7 +72,43 @@ class Application {
             calculateMutualCorrelation()
             writeMutualCorrelationToResults()
 
+            calculateSpectralDensity()
+            writeSpectralDensityToResults()
+
             closeFileWriter()
+        }
+
+        private fun writeSpectralDensityToResults() {
+            initFileWriter(SPECTRALDENSITY_FILENAME)
+            // assuming that vectors lengths are equal
+            writer.write("Spectral density\n")
+            writer.printTable(RED_NAME, BLACK_NAME, BLUE_NAME)
+            spectralDensityI.forEachIndexed { index, spectralDensityI ->
+                writer.printTable(spectralDensityI, spectralDensityJ[index], spectralDensityK[index])
+            }
+        }
+
+        private fun calculateSpectralDensity() {
+            val doubleArray = DoubleArray(512)
+            val fft = FastFourierTransformer(DftNormalization.STANDARD)
+
+            for (i in 0 until 512) {
+                doubleArray[i] = this.autoI[i].toDouble()
+            }
+
+            spectralDensityI.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+
+            for (i in 0 until 512) {
+                doubleArray[i] = this.autoJ[i].toDouble()
+            }
+
+            spectralDensityJ.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+
+            for (i in 0 until 512) {
+                doubleArray[i] = this.autoK[i].toDouble()
+            }
+
+            spectralDensityK.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
         }
 
         private fun writeMutualCorrelationToResults() {
