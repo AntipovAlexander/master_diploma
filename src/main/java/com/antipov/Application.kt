@@ -5,6 +5,7 @@ import com.antipov.modules.Dispersion
 import com.antipov.modules.MathExpectation
 import com.antipov.modules.PlotParser
 import com.antipov.utils.comma
+import com.antipov.utils.printTable
 import java.io.BufferedWriter
 import java.io.FileWriter
 
@@ -57,14 +58,15 @@ class Application {
         private fun writeAutoCorrelationToResults() {
             // assuming that vectors lengths are equal
             writer.write("Auto Correlation\n")
-            writer.write("$RED_NAME\t$BLACK_NAME\t$BLUE_NAME\n")
+            writer.printTable(RED_NAME, BLACK_NAME, BLUE_NAME)
             autoI.forEachIndexed { index, it ->
-                writer.write("${it.comma()}\t${autoJ[index].comma()}\t${autoK[index].comma()}\n")
+                writer.printTable(it, autoJ[index], autoK[index])
             }
         }
 
         private fun calculateDispersion() {
-            dispI = Dispersion().calculate(mxI, i)
+            dispI = Dispersion()
+                    .calculate(mxI, i)
             dispJ = Dispersion().calculate(mxJ, j)
             dispK = Dispersion().calculate(mxK, k)
         }
@@ -89,9 +91,9 @@ class Application {
         private fun writePlotsToResults() {
             // assuming that vectors lengths are equal
             writer.write("Parsed plots\n")
-            writer.write("$RED_NAME\t$BLACK_NAME\t$BLUE_NAME\n")
+            writer.printTable(RED_NAME, BLACK_NAME, BLUE_NAME)
             i.forEachIndexed { index, it ->
-                writer.write("${it.comma()}\t${j[index].comma()}\t${k[index].comma()}\n")
+                writer.printTable(it, j[index], k[index])
             }
         }
 
