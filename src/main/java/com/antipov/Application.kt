@@ -14,6 +14,7 @@ class Application {
         private const val AUTOCORRELATION_FILENAME = "autocorrelation.tsv"
         private const val MUTUALCORRELATION_FILENAME = "mutualcorrelation.tsv"
         private const val SPECTRALDENSITY_FILENAME = "spectraldensity.tsv"
+        private const val PERIODOGRAMMS_FILENAME = "periodogramms.tsv"
 
         private const val RED_NAME = "Ток. АТК"
         private const val BLACK_NAME = "Скор. АЗЦК"
@@ -58,6 +59,11 @@ class Application {
         private val spectralDensityJ = arrayListOf<Float>()
         private val spectralDensityK = arrayListOf<Float>()
 
+        // periodogram
+        private val periodI = arrayListOf<Float>()
+        private val periodJ = arrayListOf<Float>()
+        private val periodK = arrayListOf<Float>()
+
         @JvmStatic
         fun main(args: Array<String>) {
             parsePlots()
@@ -75,7 +81,43 @@ class Application {
             calculateSpectralDensity()
             writeSpectralDensityToResults()
 
+            calculatePeriodogramms()
+            writePeriodogrammsToResults()
+
             closeFileWriter()
+        }
+
+        private fun calculatePeriodogramms() {
+            val doubleArray = DoubleArray(512)
+            val fft = FastFourierTransformer(DftNormalization.STANDARD)
+
+            for (i in 0 until 512) {
+                doubleArray[i] = this.i[i].toDouble()
+            }
+
+            periodI.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+
+            for (i in 0 until 512) {
+                doubleArray[i] = this.j[i].toDouble()
+            }
+
+            periodJ.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+
+            for (i in 0 until 512) {
+                doubleArray[i] = this.k[i].toDouble()
+            }
+
+            periodK.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+        }
+
+        private fun writePeriodogrammsToResults() {
+            initFileWriter(PERIODOGRAMMS_FILENAME)
+            // assuming that vectors lengths are equal
+            writer.write("Periodogramms\n")
+            writer.printTable(RED_NAME, BLACK_NAME, BLUE_NAME)
+            periodI.forEachIndexed { index, periodI ->
+                writer.printTable(periodI, periodJ[index], periodK[index])
+            }
         }
 
         private fun writeSpectralDensityToResults() {
