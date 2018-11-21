@@ -1,10 +1,6 @@
 package com.antipov
 
-import com.antipov.modules.Autocorrelation
-import com.antipov.modules.Dispersion
-import com.antipov.modules.MathExpectation
-import com.antipov.modules.PlotParser
-import com.antipov.utils.comma
+import com.antipov.modules.*
 import com.antipov.utils.printTable
 import java.io.BufferedWriter
 import java.io.FileWriter
@@ -12,6 +8,8 @@ import java.io.FileWriter
 class Application {
     companion object {
         private const val PLOTS_FILENAME = "plots.tsv"
+        private const val AUTOCORRELATION_FILENAME = "autocorrelation.tsv"
+        private const val MUTUALCORRELATION_FILENAME = "mutualcorrelation.tsv"
 
         private const val RED_NAME = "Ток. АТК"
         private const val BLACK_NAME = "Скор. АЗЦК"
@@ -41,21 +39,60 @@ class Application {
         private val autoJ = arrayListOf<Float>()
         private val autoK = arrayListOf<Float>()
 
+        // mutual correlation vectors
+        private val mutualJtoI = arrayListOf<Float>()
+        private val mutualJtoK = arrayListOf<Float>()
+
+        private val mutualItoJ = arrayListOf<Float>()
+        private val mutualItoK = arrayListOf<Float>()
+
+        private val mutualKtoJ = arrayListOf<Float>()
+        private val mutualKtoI = arrayListOf<Float>()
+
         @JvmStatic
         fun main(args: Array<String>) {
-            initFileWriter()
-
             parsePlots()
             writePlotsToResults()
+
             initTimeLine()
             calculateMathExpectation()
             calculateDispersion()
             calculateAutoCorrelation()
             writeAutoCorrelationToResults()
+
+            calculateMutualCorrelation()
+            writeMutualCorrelationToResults()
+
             closeFileWriter()
         }
 
+        private fun writeMutualCorrelationToResults() {
+            initFileWriter(MUTUALCORRELATION_FILENAME)
+            // assuming that vectors lengths are equal
+            writer.write("Mutual Correlation\n")
+            writer.printTable(BLACK_NAME, BLACK_NAME, RED_NAME, RED_NAME, BLUE_NAME, BLUE_NAME)
+            writer.printTable(RED_NAME, BLUE_NAME, BLACK_NAME, BLUE_NAME, BLACK_NAME, RED_NAME)
+            mutualJtoI.forEachIndexed { index, mutualJtoI ->
+                writer.printTable(mutualJtoI, mutualJtoK[index], mutualItoJ[index], mutualItoK[index], mutualKtoJ[index], mutualKtoI[index])
+            }
+        }
+
+        private fun calculateMutualCorrelation() {
+            val mc = Mutualcorrelation()
+
+            mutualJtoI.addAll(mc.calculate(mxJ, mxI, j, i))
+            mutualJtoK.addAll(mc.calculate(mxJ, mxK, j, k))
+
+            mutualItoJ.addAll(mc.calculate(mxI, mxJ, i, j))
+            mutualItoK.addAll(mc.calculate(mxI, mxK, i, k))
+
+            mutualKtoJ.addAll(mc.calculate(mxK, mxJ, k, j))
+            mutualKtoI.addAll(mc.calculate(mxK, mxI, k, i))
+        }
+
+
         private fun writeAutoCorrelationToResults() {
+            initFileWriter(AUTOCORRELATION_FILENAME)
             // assuming that vectors lengths are equal
             writer.write("Auto Correlation\n")
             writer.printTable(RED_NAME, BLACK_NAME, BLUE_NAME)
@@ -89,6 +126,7 @@ class Application {
         }
 
         private fun writePlotsToResults() {
+            initFileWriter(PLOTS_FILENAME)
             // assuming that vectors lengths are equal
             writer.write("Parsed plots\n")
             writer.printTable(RED_NAME, BLACK_NAME, BLUE_NAME)
@@ -97,8 +135,8 @@ class Application {
             }
         }
 
-        private fun initFileWriter() {
-            fWriter = FileWriter(PLOTS_FILENAME, false)
+        private fun initFileWriter(name: String) {
+            fWriter = FileWriter(name, false)
             writer = BufferedWriter(fWriter)
         }
 
@@ -116,3 +154,4 @@ class Application {
         }
     }
 }
+
