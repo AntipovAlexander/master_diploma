@@ -2,13 +2,11 @@ package com.antipov
 
 import com.antipov.modules.*
 import com.antipov.utils.printTable
-import org.apache.commons.math3.distribution.NormalDistribution
 import org.apache.commons.math3.transform.DftNormalization
 import org.apache.commons.math3.transform.FastFourierTransformer
 import org.apache.commons.math3.transform.TransformType
 import java.io.BufferedWriter
 import java.io.FileWriter
-import kotlin.math.sqrt
 
 class Application {
     companion object {
@@ -99,21 +97,9 @@ class Application {
         }
 
         private fun calculateNormalDistributions() {
-            i.forEach {
-                val dist = NormalDistribution(mxI.toDouble(), sqrt(dispI).toDouble())
-                normalI.add(dist.density(it.toDouble()).toFloat())
-            }
-
-            j.forEach {
-                val dist = NormalDistribution(mxJ.toDouble(), sqrt(dispJ).toDouble())
-                normalJ.add(dist.density(it.toDouble()).toFloat())
-            }
-
-
-            k.forEach {
-                val dist = NormalDistribution(mxK.toDouble(), sqrt(dispK).toDouble())
-                normalK.add(dist.density(it.toDouble()).toFloat())
-            }
+            normalI.addAll(NormalDistribution().calculate(mxI, dispI, i))
+            normalJ.addAll(NormalDistribution().calculate(mxJ, dispJ, j))
+            normalK.addAll(NormalDistribution().calculate(mxK, dispK, k))
         }
 
         private fun writeNormalDistributionsToResults() {
