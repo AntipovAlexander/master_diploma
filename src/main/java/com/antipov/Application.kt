@@ -75,23 +75,24 @@ class Application {
             parsePlots()
             writePlotsToResults()
 
-            initTimeLine()
-            calculateMathExpectation()
-            calculateDispersion()
-            calculateAutoCorrelation()
-            writeAutoCorrelationToResults()
-
-            calculateMutualCorrelation()
-            writeMutualCorrelationToResults()
-
-            calculateSpectralDensity()
-            writeSpectralDensityToResults()
-
-            calculatePeriodogramms()
-            writePeriodogrammsToResults()
-
-            calculateNormalDistributions()
-            writeNormalDistributionsToResults()
+//            initTimeLine()
+//            calculateMathExpectation()
+//            calculateDispersion()
+//            calculateAutoCorrelation()
+//            writeAutoCorrelationToResults()
+//
+//            calculateMutualCorrelation()
+//            writeMutualCorrelationToResults()
+//
+//            calculateSpectralDensity()
+//            writeSpectralDensityToResults()
+//
+//            calculatePeriodogramms()
+//            writePeriodogrammsToResults()
+//
+//            calculateNormalDistributions()
+//            writeNormalDistributionsToResults()
+            TwoFunctions().calculate(i, j)
 
             closeFileWriter()
         }
