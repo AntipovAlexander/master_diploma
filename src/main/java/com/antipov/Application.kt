@@ -2,11 +2,13 @@ package com.antipov
 
 import com.antipov.modules.*
 import com.antipov.utils.printTable
+import org.apache.commons.math3.distribution.NormalDistribution
 import org.apache.commons.math3.transform.DftNormalization
 import org.apache.commons.math3.transform.FastFourierTransformer
 import org.apache.commons.math3.transform.TransformType
 import java.io.BufferedWriter
 import java.io.FileWriter
+import kotlin.math.sqrt
 
 class Application {
     companion object {
@@ -15,6 +17,7 @@ class Application {
         private const val MUTUALCORRELATION_FILENAME = "mutualcorrelation.tsv"
         private const val SPECTRALDENSITY_FILENAME = "spectraldensity.tsv"
         private const val PERIODOGRAMMS_FILENAME = "periodogramms.tsv"
+        private const val NDIST_FILENAME = "normaldist.tsv"
 
         private const val RED_NAME = "Ток. АТК"
         private const val BLACK_NAME = "Скор. АЗЦК"
@@ -64,6 +67,11 @@ class Application {
         private val periodJ = arrayListOf<Float>()
         private val periodK = arrayListOf<Float>()
 
+        // normal distribution
+        private val normalI = arrayListOf<Float>()
+        private val normalJ = arrayListOf<Float>()
+        private val normalK = arrayListOf<Float>()
+
         @JvmStatic
         fun main(args: Array<String>) {
             parsePlots()
@@ -84,7 +92,38 @@ class Application {
             calculatePeriodogramms()
             writePeriodogrammsToResults()
 
+            calculateNormalDistributions()
+            writeNormalDistributionsToResults()
+
             closeFileWriter()
+        }
+
+        private fun calculateNormalDistributions() {
+            i.forEach {
+                val dist = NormalDistribution(mxI.toDouble(), sqrt(dispI).toDouble())
+                normalI.add(dist.density(it.toDouble()).toFloat())
+            }
+
+            j.forEach {
+                val dist = NormalDistribution(mxJ.toDouble(), sqrt(dispJ).toDouble())
+                normalJ.add(dist.density(it.toDouble()).toFloat())
+            }
+
+
+            k.forEach {
+                val dist = NormalDistribution(mxK.toDouble(), sqrt(dispK).toDouble())
+                normalK.add(dist.density(it.toDouble()).toFloat())
+            }
+        }
+
+        private fun writeNormalDistributionsToResults() {
+            initFileWriter(NDIST_FILENAME)
+            // assuming that vectors lengths are equal
+            writer.write("Normal distribution\n")
+            writer.printTable(RED_NAME, BLACK_NAME, BLUE_NAME)
+            normalI.forEachIndexed { index, normalI ->
+                writer.printTable(normalI, normalJ[index], normalK[index])
+            }
         }
 
         private fun calculatePeriodogramms() {
