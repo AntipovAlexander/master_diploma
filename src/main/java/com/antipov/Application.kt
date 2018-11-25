@@ -95,8 +95,11 @@ class Application {
 
             calculateNormalDistributions()
             writeNormalDistributionsToResults()
+            // todo: put it to file
 //            val res = TwoFunctions().calculate(i, j)
-
+//            res.forEach {
+//                println(it)
+//            }
             closeFileWriter()
         }
 
