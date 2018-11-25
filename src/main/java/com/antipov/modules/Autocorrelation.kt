@@ -4,7 +4,7 @@ class Autocorrelation {
     fun calculate(mx: Float, disp: Float, x: ArrayList<Float>): ArrayList<Float> {
 
         val n = x.size
-        val limit = (x.size * 2) / 3
+        val limit = (x.size * 4) / 5
 
         val autocorrelation = arrayListOf<Float>()
 

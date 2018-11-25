@@ -1,6 +1,7 @@
 package com.antipov
 
 import com.antipov.modules.*
+import com.antipov.utils.closestPowerOfTwo
 import com.antipov.utils.printTable
 import org.apache.commons.math3.transform.DftNormalization
 import org.apache.commons.math3.transform.FastFourierTransformer
@@ -20,6 +21,8 @@ class Application {
         private const val RED_NAME = "Ток. АТК"
         private const val BLACK_NAME = "Скор. АЗЦК"
         private const val BLUE_NAME = "ЭДС"
+
+        private var DFT_SIZE = 1024
 
         private lateinit var writer: BufferedWriter
         private lateinit var fWriter: FileWriter
@@ -111,13 +114,16 @@ class Application {
             normalI.forEachIndexed { index, normalI ->
                 writer.printTable(normalI, normalJ[index], normalK[index])
             }
+            closeFileWriter()
         }
 
         private fun calculatePeriodogramms() {
-            val doubleArray = DoubleArray(512)
+            DFT_SIZE = i.size.closestPowerOfTwo()
+
+            val doubleArray = DoubleArray(DFT_SIZE)
             val fft = FastFourierTransformer(DftNormalization.STANDARD)
 
-            for (i in 0 until 512) {
+            for (i in 0 until DFT_SIZE) {
                 doubleArray[i] = this.i[i].toDouble()
             }
 
@@ -129,7 +135,7 @@ class Application {
 
             periodJ.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
 
-            for (i in 0 until 512) {
+            for (i in 0 until DFT_SIZE) {
                 doubleArray[i] = this.k[i].toDouble()
             }
 
@@ -144,6 +150,7 @@ class Application {
             periodI.forEachIndexed { index, periodI ->
                 writer.printTable(periodI, periodJ[index], periodK[index])
             }
+            closeFileWriter()
         }
 
         private fun writeSpectralDensityToResults() {
@@ -154,25 +161,28 @@ class Application {
             spectralDensityI.forEachIndexed { index, spectralDensityI ->
                 writer.printTable(spectralDensityI, spectralDensityJ[index], spectralDensityK[index])
             }
+            closeFileWriter()
         }
 
         private fun calculateSpectralDensity() {
-            val doubleArray = DoubleArray(512)
+            DFT_SIZE = autoI.size.closestPowerOfTwo()
+
+            val doubleArray = DoubleArray(DFT_SIZE)
             val fft = FastFourierTransformer(DftNormalization.STANDARD)
 
-            for (i in 0 until 512) {
+            for (i in 0 until DFT_SIZE) {
                 doubleArray[i] = this.autoI[i].toDouble()
             }
 
             spectralDensityI.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
 
-            for (i in 0 until 512) {
+            for (i in 0 until DFT_SIZE) {
                 doubleArray[i] = this.autoJ[i].toDouble()
             }
 
             spectralDensityJ.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
 
-            for (i in 0 until 512) {
+            for (i in 0 until DFT_SIZE) {
                 doubleArray[i] = this.autoK[i].toDouble()
             }
 
@@ -188,6 +198,7 @@ class Application {
             mutualJtoI.forEachIndexed { index, mutualJtoI ->
                 writer.printTable(mutualJtoI, mutualJtoK[index], mutualItoJ[index], mutualItoK[index], mutualKtoJ[index], mutualKtoI[index])
             }
+            closeFileWriter()
         }
 
         private fun calculateMutualCorrelation() {
@@ -212,6 +223,7 @@ class Application {
             autoI.forEachIndexed { index, it ->
                 writer.printTable(it, autoJ[index], autoK[index])
             }
+            closeFileWriter()
         }
 
         private fun calculateDispersion() {
@@ -246,10 +258,11 @@ class Application {
             i.forEachIndexed { index, it ->
                 writer.printTable(it, j[index], k[index])
             }
+            closeFileWriter()
         }
 
         private fun initFileWriter(name: String) {
-            fWriter = FileWriter(name, false)
+            fWriter = FileWriter(name)
             writer = BufferedWriter(fWriter)
         }
 

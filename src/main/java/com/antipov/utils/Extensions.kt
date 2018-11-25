@@ -19,3 +19,5 @@ fun BufferedWriter.printTable(i: String, j: String, k: String, z: String, x: Str
 fun BufferedWriter.printTable(i: Float, j: Float, k: Float, z: Float, x: Float, y: Float) {
     write("${i.comma()}\t${j.comma()}\t${k.comma()}\t${z.comma()}\t${x.comma()}\t${y.comma()}\n")
 }
+
+fun Int.closestPowerOfTwo() = if (this == 1) 1 else Integer.highestOneBit(this - 1)
