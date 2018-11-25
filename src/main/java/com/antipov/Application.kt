@@ -92,7 +92,7 @@ class Application {
 
             calculateNormalDistributions()
             writeNormalDistributionsToResults()
-//            TwoFunctions().calculate(i, j)
+//            val res = TwoFunctions().calculate(i, j)
 
             closeFileWriter()
         }

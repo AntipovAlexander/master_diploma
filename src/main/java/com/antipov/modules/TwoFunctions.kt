@@ -1,13 +1,21 @@
 package com.antipov.modules
 
+import com.antipov.results.TwoFunctionsResult
+import org.apache.commons.math3.stat.descriptive.moment.Kurtosis
+import org.apache.commons.math3.stat.descriptive.moment.Skewness
 import java.util.HashSet
 
 
 class TwoFunctions {
 
-    fun calculate(x: ArrayList<Float>, y: ArrayList<Float>, printDebug: Boolean = false): ArrayList<ArrayList<Float>> {
+    fun calculate(x: ArrayList<Float>, y: ArrayList<Float>, printDebug: Boolean = false): ArrayList<TwoFunctionsResult> {
         val valsX = HashSet<Float>(x)
-        val result = arrayListOf<ArrayList<Float>>()
+        val results = arrayListOf<TwoFunctionsResult>()
+        val mxCalculator = MathExpectation()
+        val dispersionCalculator = Dispersion()
+        val skewnessCalculator = Skewness()
+        val kurtosisCalculator = Kurtosis()
+
         valsX.forEach { value ->
 
             val argumentsX = arrayListOf<Int>()
@@ -32,8 +40,18 @@ class TwoFunctions {
                 valuesY.add(y[it])
             }
 
-            result.add(valuesY)
+            val mx = mxCalculator.calculate(valuesY)
+
+            val result = TwoFunctionsResult(
+                    valuesY,
+                    mx,
+                    dispersionCalculator.calculate(mx, valuesY),
+                    skewnessCalculator.evaluate(valuesY.map { it.toDouble() }.toDoubleArray(), 0, valuesY.size).toFloat(),
+                    kurtosisCalculator.evaluate(valuesY.map { it.toDouble() }.toDoubleArray(), 0, valuesY.size).toFloat()
+            )
+
+            results.add(result)
         }
-        return result
+        return results
     }
 }
