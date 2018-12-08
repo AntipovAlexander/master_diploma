@@ -15,6 +15,7 @@ class Application {
         private const val AUTOCORRELATION_FILENAME = "autocorrelation.tsv"
         private const val MUTUALCORRELATION_FILENAME = "mutualcorrelation.tsv"
         private const val SPECTRALDENSITY_FILENAME = "spectraldensity.tsv"
+        private const val MUTUALSPECTRAL_FILENAME = "mutualspectraldensity.tsv"
         private const val PERIODOGRAMMS_FILENAME = "periodogramms.tsv"
         private const val NDIST_FILENAME = "normaldist.tsv"
 
@@ -63,6 +64,16 @@ class Application {
         private val spectralDensityJ = arrayListOf<Float>()
         private val spectralDensityK = arrayListOf<Float>()
 
+        // spectral density mutual correlation
+        private val mutualSpectralDensityJtoI = arrayListOf<Float>()
+        private val mutualSpectralDensityJtoK = arrayListOf<Float>()
+
+        private val mutualSpectralDensityItoJ = arrayListOf<Float>()
+        private val mutualSpectralDensityItoK = arrayListOf<Float>()
+
+        private val mutualSpectralDensityKtoJ = arrayListOf<Float>()
+        private val mutualSpectralDensityKtoI = arrayListOf<Float>()
+
         // periodogram
         private val periodI = arrayListOf<Float>()
         private val periodJ = arrayListOf<Float>()
@@ -90,6 +101,9 @@ class Application {
             calculateSpectralDensity()
             writeSpectralDensityToResults()
 
+            calculateSpectralDensityForMutualCorrelation()
+            writeSpectralDensityForMutualCorrelationToResults()
+
             calculatePeriodogramms()
             writePeriodogrammsToResults()
 
@@ -101,6 +115,60 @@ class Application {
 //                println(it)
 //            }
             closeFileWriter()
+        }
+
+        private fun writeSpectralDensityForMutualCorrelationToResults() {
+            initFileWriter(MUTUALSPECTRAL_FILENAME)
+            // assuming that vectors lengths are equal
+            writer.write("Mutual spectral density\n")
+            writer.printTable(BLACK_NAME, BLACK_NAME, RED_NAME, RED_NAME, BLUE_NAME, BLUE_NAME)
+            writer.printTable(RED_NAME, BLUE_NAME, BLACK_NAME, BLUE_NAME, BLACK_NAME, RED_NAME)
+            mutualSpectralDensityJtoI.forEachIndexed { index,  mutualSpectralDensityJtoI ->
+                writer.printTable(mutualSpectralDensityJtoI, mutualSpectralDensityJtoK[index], mutualSpectralDensityItoJ[index], mutualSpectralDensityItoK[index], mutualSpectralDensityKtoJ[index], mutualSpectralDensityKtoI[index])
+            }
+            closeFileWriter()
+        }
+
+        private fun calculateSpectralDensityForMutualCorrelation() {
+            DFT_SIZE = autoI.size.closestPowerOfTwo()
+            val doubleArray = DoubleArray(DFT_SIZE)
+            val fft = FastFourierTransformer(DftNormalization.STANDARD)
+
+            for (i in 0 until DFT_SIZE) {
+                doubleArray[i] = this.mutualJtoI[i].toDouble()
+            }
+
+            mutualSpectralDensityJtoI.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+
+            for (i in 0 until DFT_SIZE) {
+                doubleArray[i] = this.mutualJtoK[i].toDouble()
+            }
+
+            mutualSpectralDensityJtoK.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+
+            for (i in 0 until DFT_SIZE) {
+                doubleArray[i] = this.mutualItoJ[i].toDouble()
+            }
+
+            mutualSpectralDensityItoJ.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+
+            for (i in 0 until DFT_SIZE) {
+                doubleArray[i] = this.mutualItoK[i].toDouble()
+            }
+
+            mutualSpectralDensityItoK.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+
+            for (i in 0 until DFT_SIZE) {
+                doubleArray[i] = this.mutualKtoJ[i].toDouble()
+            }
+
+            mutualSpectralDensityKtoJ.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+
+            for (i in 0 until DFT_SIZE) {
+                doubleArray[i] = this.mutualKtoI[i].toDouble()
+            }
+
+            mutualSpectralDensityKtoI.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
         }
 
         private fun calculateNormalDistributions() {
