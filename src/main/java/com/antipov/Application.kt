@@ -3,6 +3,7 @@ package com.antipov
 import com.antipov.modules.*
 import com.antipov.utils.closestPowerOfTwo
 import com.antipov.utils.printTable
+import org.apache.commons.math3.stat.descriptive.AbstractStorelessUnivariateStatistic
 import org.apache.commons.math3.stat.descriptive.moment.Kurtosis
 import org.apache.commons.math3.stat.descriptive.moment.Skewness
 import org.apache.commons.math3.transform.DftNormalization
@@ -22,11 +23,21 @@ class Application {
         private const val MUTUALSPECTRAL_FILENAME = "mutualspectraldensity.tsv"
         private const val PERIODOGRAMMS_FILENAME = "periodogramms.tsv"
         private const val NDIST_FILENAME = "normaldist.tsv"
-        private const val FUNCTION_DEPENDENCY_FILENAME = "functiondependency.tsv"
-        private const val FUNCTION_DEPENDENCY_MX_FILENAME = "functiondependencymx.tsv"
-        private const val FUNCTION_DEPENDENCY_DISP_FILENAME = "functiondependencydisp.tsv"
-        private const val FUNCTION_DEPENDENCY_SKEWNESS_FILENAME = "skewness.tsv"
-        private const val FUNCTION_DEPENDENCY_KURTOSIS_FILENAME = "kurtosis.tsv"
+
+        private const val DEPENDENCY_FILENAME_I_J = "dependecy_i_j.tsv"
+        private const val DEPENDENCY_FILENAME_I_K = "dependecy_i_k.tsv"
+        private const val DEPENDENCY_FILENAME_J_I = "dependecy_j_i.tsv"
+        private const val DEPENDENCY_FILENAME_J_K = "dependecy_j_k.tsv"
+        private const val DEPENDENCY_FILENAME_K_J = "dependecy_k_j.tsv"
+        private const val DEPENDENCY_FILENAME_K_I = "dependecy_k_i.tsv"
+
+        private const val DEPENDENCY_STATS_FILENAME_I_J = "dependecy_stats_i_j.tsv"
+        private const val DEPENDENCY_STATS_FILENAME_I_K = "dependecy_stats_i_k.tsv"
+        private const val DEPENDENCY_STATS_FILENAME_J_I = "dependecy_stats_j_i.tsv"
+        private const val DEPENDENCY_STATS_FILENAME_J_K = "dependecy_stats_j_k.tsv"
+        private const val DEPENDENCY_STATS_FILENAME_K_J = "dependecy_stats_k_j.tsv"
+        private const val DEPENDENCY_STATS_FILENAME_K_I = "dependecy_stats_k_i.tsv"
+
 
         private const val RED_NAME = "Ток. АТК"
         private const val BLACK_NAME = "Скор. АЗЦК"
@@ -95,7 +106,13 @@ class Application {
 
         // functions dependency
         private var dependency = sortedMapOf<Float, LinkedHashSet<Float>>()
-        private val dependencyMX = arrayListOf<Float>()
+
+        private var functionalDependencyItoJ = sortedMapOf<Float, LinkedHashSet<Float>>()
+        private var functionalDependencyItoK = sortedMapOf<Float, LinkedHashSet<Float>>()
+        private var functionalDependencyJtoI = sortedMapOf<Float, LinkedHashSet<Float>>()
+        private var functionalDependencyJtoK = sortedMapOf<Float, LinkedHashSet<Float>>()
+        private var functionalDependencyKtoJ = sortedMapOf<Float, LinkedHashSet<Float>>()
+        private var functionalDependencyKtoI = sortedMapOf<Float, LinkedHashSet<Float>>()
 
 
         @JvmStatic
@@ -124,93 +141,73 @@ class Application {
             calculateNormalDistributions()
             writeNormalDistributionsToResults()
 
-            writeFunctionDependenciesToFile()
-            writeFunctionDependenciesMXToFile()
-            writeFunctionDependenciesDispToFile()
-            writeFunctionDependenciesSkewness()
-            writeFunctionDependenciesKurtosis()
+            calculateFunctionalDependencies()
+            writeFunctionDependenciesToFile(i, j, DEPENDENCY_FILENAME_I_J)
+            writeFunctionDependenciesToFile(i, k, DEPENDENCY_FILENAME_I_K)
+            writeFunctionDependenciesToFile(j, i, DEPENDENCY_FILENAME_J_I)
+            writeFunctionDependenciesToFile(j, k, DEPENDENCY_FILENAME_J_K)
+            writeFunctionDependenciesToFile(k, j, DEPENDENCY_FILENAME_K_J)
+            writeFunctionDependenciesToFile(k, i, DEPENDENCY_FILENAME_K_I)
 
-            closeFileWriter()
+            writeFunctionDependenciesMxDispStatisticToFile(functionalDependencyItoJ, DEPENDENCY_STATS_FILENAME_I_J)
+            writeFunctionDependenciesMxDispStatisticToFile(functionalDependencyItoK, DEPENDENCY_STATS_FILENAME_I_K)
+            writeFunctionDependenciesMxDispStatisticToFile(functionalDependencyJtoI, DEPENDENCY_STATS_FILENAME_J_I)
+            writeFunctionDependenciesMxDispStatisticToFile(functionalDependencyJtoK, DEPENDENCY_STATS_FILENAME_J_K)
+            writeFunctionDependenciesMxDispStatisticToFile(functionalDependencyKtoJ, DEPENDENCY_STATS_FILENAME_K_J)
+            writeFunctionDependenciesMxDispStatisticToFile(functionalDependencyKtoI, DEPENDENCY_STATS_FILENAME_K_I)
+
         }
 
-        private fun writeFunctionDependenciesKurtosis() {
-            val results = arrayListOf<Float>()
-            dependency.keys.forEach {
-                dependency[it]?.let {
+        private fun writeFunctionDependenciesMxDispStatisticToFile(dataset: SortedMap<Float, LinkedHashSet<Float>>, filename: String) {
+            val calculatorMX = MathExpectation()
+            val calculatorDisp = Dispersion()
+            val calculatorSkewness = Skewness()
+            val calculatorKurtosis = Kurtosis()
+            val mxResults = arrayListOf<Float>()
+            val dispResults = arrayListOf<Float>()
+            val skewness = arrayListOf<Float>()
+            val kurtosis = arrayListOf<Float>()
+            dataset.keys.forEachIndexed { index, it ->
+                mxResults.add(calculatorMX.calculate(ArrayList(dataset[it])))
+                dispResults.add(calculatorDisp.calculate(mxResults[index], ArrayList(dataset[it])))
+                dataset[it]?.let {
                     val array = DoubleArray(it.size)
-                    it.forEachIndexed { index, it ->
-                        array[index] = it.toDouble()
+                    it.forEachIndexed { index, value ->
+                        array[index] = value.toDouble()
                     }
-                    val res = Kurtosis().evaluate(array)
-                    results.add(res.toFloat())
+                    val res = calculatorSkewness.evaluate(array)
+                    skewness.add(res.toFloat())
                 }
-            }
-            initFileWriter(FUNCTION_DEPENDENCY_KURTOSIS_FILENAME)
-            results.forEach {
-                if (it.isNaN()) {
-                    writer.write("0,0")
-                } else {
-                    writer.write(it.toString().replace(".", ","))
-                }
-                writer.newLine()
-            }
-            closeFileWriter()
-        }
-
-        private fun writeFunctionDependenciesSkewness() {
-            val results = arrayListOf<Float>()
-            dependency.keys.forEach {
-                dependency[it]?.let {
+                dataset[it]?.let {
                     val array = DoubleArray(it.size)
-                    it.forEachIndexed { index, it ->
-                        array[index] = it.toDouble()
+                    it.forEachIndexed { index, value ->
+                        array[index] = value.toDouble()
                     }
-                    val res = Skewness().evaluate(array)
-                    results.add(res.toFloat())
+                    val res = calculatorKurtosis.evaluate(array)
+                    kurtosis.add(res.toFloat())
                 }
             }
-            initFileWriter(FUNCTION_DEPENDENCY_SKEWNESS_FILENAME)
-            results.forEach {
-                if (it.isNaN()) {
-                    writer.write("0,0")
-                } else {
-                    writer.write(it.toString().replace(".", ","))
+            initFileWriter(filename)
+            writer.write("Math expectation\tDispersion\tSkewness\tKurtosis")
+            writer.newLine()
+            mxResults.forEachIndexed { index, result ->
+                synchronized(this) {
+                    val skewnessValue = if (skewness[index].isNaN()) 0f else skewness[index]
+                    val kurtosisValue = if (kurtosis[index].isNaN()) 0f else kurtosis[index]
+                    writer.write("${result.toString().replace(".", ",")}\t" +
+                            "${dispResults[index].toString().replace(".", ",")}\t" +
+                            "${kurtosisValue.toString().replace(".", ",")}\t" +
+                            skewnessValue.toString().replace(".", ","))
+                    writer.newLine()
                 }
-                writer.newLine()
             }
             closeFileWriter()
+
         }
 
-        private fun writeFunctionDependenciesDispToFile() {
-            val calculator = Dispersion()
-            val resDisp = arrayListOf<Float>()
-            dependency.keys.forEachIndexed { index, it ->
-                resDisp.add(calculator.calculate(dependencyMX[index], ArrayList(dependency[it])))
-            }
-            initFileWriter(FUNCTION_DEPENDENCY_DISP_FILENAME)
-            resDisp.forEach {
-                writer.write(it.toString().replace(".", ","))
-                writer.newLine()
-            }
-            closeFileWriter()
-        }
-
-        private fun writeFunctionDependenciesMXToFile() {
-            val calculator = MathExpectation()
-            dependency.keys.forEach {
-                dependencyMX.add(calculator.calculate(ArrayList(dependency[it])))
-            }
-            initFileWriter(FUNCTION_DEPENDENCY_MX_FILENAME)
-            dependencyMX.forEach {
-                writer.write(it.toString().replace(".", ","))
-                writer.newLine()
-            }
-            closeFileWriter()
-        }
-
-        private fun writeFunctionDependenciesToFile() {
+        private fun writeFunctionDependenciesToFile(i: ArrayList<Float>, j: ArrayList<Float>, filename: String) {
             dependency = FunctionDependency().calculate(i, j)
-            initFileWriter(FUNCTION_DEPENDENCY_FILENAME)
+            initFileWriter(filename)
             dependency.keys.forEach {
                 Companion.writer.write("${it.toString().replace(".", ",")}\t")
                 dependency[it]?.forEach { value ->
@@ -221,13 +218,23 @@ class Application {
             closeFileWriter()
         }
 
+        private fun calculateFunctionalDependencies() {
+            val calculator = FunctionDependency()
+            functionalDependencyItoJ = calculator.calculate(i, j)
+            functionalDependencyItoK = calculator.calculate(i, k)
+            functionalDependencyJtoI = calculator.calculate(j, i)
+            functionalDependencyJtoK = calculator.calculate(j, k)
+            functionalDependencyKtoJ = calculator.calculate(k, j)
+            functionalDependencyKtoI = calculator.calculate(k, i)
+        }
+
         private fun writeSpectralDensityForMutualCorrelationToResults() {
             initFileWriter(MUTUALSPECTRAL_FILENAME)
             // assuming that vectors lengths are equal
             writer.write("Mutual spectral density\n")
             writer.printTable(BLACK_NAME, BLACK_NAME, RED_NAME, RED_NAME, BLUE_NAME, BLUE_NAME)
             writer.printTable(RED_NAME, BLUE_NAME, BLACK_NAME, BLUE_NAME, BLACK_NAME, RED_NAME)
-            mutualSpectralDensityJtoI.forEachIndexed { index,  mutualSpectralDensityJtoI ->
+            mutualSpectralDensityJtoI.forEachIndexed { index, mutualSpectralDensityJtoI ->
                 writer.printTable(mutualSpectralDensityJtoI, mutualSpectralDensityJtoK[index], mutualSpectralDensityItoJ[index], mutualSpectralDensityItoK[index], mutualSpectralDensityKtoJ[index], mutualSpectralDensityKtoI[index])
             }
             closeFileWriter()
