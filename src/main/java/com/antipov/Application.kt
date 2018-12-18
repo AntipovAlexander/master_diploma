@@ -97,9 +97,9 @@ class Application {
         private lateinit var mutualSpectralDensityKtoI : Pair<FloatArray, FloatArray>
 
         // periodogram
-        private val periodI = arrayListOf<Float>()
-        private val periodJ = arrayListOf<Float>()
-        private val periodK = arrayListOf<Float>()
+        private lateinit var periodI : Pair<FloatArray, FloatArray>
+        private lateinit var periodJ : Pair<FloatArray, FloatArray>
+        private lateinit var periodK : Pair<FloatArray, FloatArray>
 
         // normal distribution
         private val normalI = arrayListOf<Float>()
@@ -317,36 +317,41 @@ class Application {
 
         private fun calculatePeriodogramms() {
             DFT_SIZE = i.size.closestPowerOfTwo()
-
+            val harmonicCalculator = Harmonics()
             val doubleArray = DoubleArray(DFT_SIZE)
             val fft = FastFourierTransformer(DftNormalization.STANDARD)
 
             for (i in 0 until DFT_SIZE) {
                 doubleArray[i] = this.i[i].toDouble()
             }
-
-            periodI.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+            periodI = harmonicCalculator.calculate(fft.transform(doubleArray, TransformType.FORWARD))
 
             for (i in 0 until 512) {
                 doubleArray[i] = this.j[i].toDouble()
             }
 
-            periodJ.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+            periodJ = harmonicCalculator.calculate(fft.transform(doubleArray, TransformType.FORWARD))
 
             for (i in 0 until DFT_SIZE) {
                 doubleArray[i] = this.k[i].toDouble()
             }
 
-            periodK.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+            periodK = harmonicCalculator.calculate(fft.transform(doubleArray, TransformType.FORWARD))
         }
 
         private fun writePeriodogrammsToResults() {
             initFileWriter(PERIODOGRAMMS_FILENAME)
             // assuming that vectors lengths are equal
             writer.write("Periodogramms\n")
-            writer.printTable(RED_NAME, BLACK_NAME, BLUE_NAME)
-            periodI.forEachIndexed { index, periodI ->
-                writer.printTable(periodI, periodJ[index], periodK[index])
+            writer.write("$RED_NAME - freq\t$RED_NAME - amp\t$BLACK_NAME- freq\t$BLACK_NAME- amp\t$BLUE_NAME - freq\t$BLUE_NAME-amp\n")
+            periodI.first.forEachIndexed { index, pI ->
+                writer.write(
+                        pI.toString().replace(".", ",") +
+                                "\t${periodI.second[index].toString().replace(".", ",")}" +
+                                "\t${periodJ.first[index].toString().replace(".", ",")}" +
+                                "\t${periodJ.second[index].toString().replace(".", ",")}" +
+                                "\t${periodK.first[index].toString().replace(".", ",")}" +
+                                "\t${periodK.second[index].toString().replace(".", ",")}\n")
             }
             closeFileWriter()
         }
