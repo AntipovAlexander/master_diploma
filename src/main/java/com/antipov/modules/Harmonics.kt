@@ -26,7 +26,7 @@ class Harmonics {
         }
         ++i
 
-        for (z in 1..nMax) {
+        for (z in 1 until nMax) {
             val re = complex[z].real
             val im = complex[z].imaginary
 

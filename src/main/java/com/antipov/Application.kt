@@ -12,6 +12,9 @@ import java.io.BufferedWriter
 import java.io.FileWriter
 import java.util.*
 import kotlin.collections.ArrayList
+import java.text.DecimalFormat
+
+
 
 class Application {
     companion object {
@@ -79,9 +82,9 @@ class Application {
         private val mutualKtoI = arrayListOf<Float>()
 
         // spectral density
-        private val spectralDensityI = arrayListOf<Float>()
-        private val spectralDensityJ = arrayListOf<Float>()
-        private val spectralDensityK = arrayListOf<Float>()
+        private lateinit var spectralDensityI : Pair<FloatArray, FloatArray>
+        private lateinit var spectralDensityJ : Pair<FloatArray, FloatArray>
+        private lateinit var spectralDensityK : Pair<FloatArray, FloatArray>
 
         // spectral density mutual correlation
         private val mutualSpectralDensityJtoI = arrayListOf<Float>()
@@ -339,14 +342,22 @@ class Application {
             // assuming that vectors lengths are equal
             writer.write("Spectral density\n")
             writer.printTable(RED_NAME, BLACK_NAME, BLUE_NAME)
-            spectralDensityI.forEachIndexed { index, spectralDensityI ->
-                writer.printTable(spectralDensityI, spectralDensityJ[index], spectralDensityK[index])
+            writer.write("$RED_NAME - freq\t$RED_NAME - amp\t$BLACK_NAME- freq\t$BLACK_NAME- amp\t$BLUE_NAME - freq\t$BLUE_NAME-amp\n")
+            spectralDensityI.first.forEachIndexed { index, scI ->
+                writer.write(
+                        scI.toString().replace(".", ",") +
+                        "\t${spectralDensityI.second[index].toString().replace(".", ",")}" +
+                        "\t${spectralDensityJ.first[index].toString().replace(".", ",")}" +
+                        "\t${spectralDensityJ.second[index].toString().replace(".", ",")}" +
+                        "\t${spectralDensityK.first[index].toString().replace(".", ",")}" +
+                        "\t${spectralDensityK.second[index].toString().replace(".", ",")}\n")
             }
             closeFileWriter()
         }
 
         private fun calculateSpectralDensity() {
             DFT_SIZE = autoI.size.closestPowerOfTwo()
+            val harmonicCalculator = Harmonics()
 
             val doubleArray = DoubleArray(DFT_SIZE)
             val fft = FastFourierTransformer(DftNormalization.STANDARD)
@@ -355,19 +366,20 @@ class Application {
                 doubleArray[i] = this.autoI[i].toDouble()
             }
 
-            spectralDensityI.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+
+            spectralDensityI = harmonicCalculator.calculate(fft.transform(doubleArray, TransformType.FORWARD))
 
             for (i in 0 until DFT_SIZE) {
                 doubleArray[i] = this.autoJ[i].toDouble()
             }
 
-            spectralDensityJ.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+            spectralDensityJ = harmonicCalculator.calculate(fft.transform(doubleArray, TransformType.FORWARD))
 
             for (i in 0 until DFT_SIZE) {
                 doubleArray[i] = this.autoK[i].toDouble()
             }
 
-            spectralDensityK.addAll(fft.transform(doubleArray, TransformType.FORWARD).map { it.real.toFloat() })
+            spectralDensityK = harmonicCalculator.calculate(fft.transform(doubleArray, TransformType.FORWARD))
         }
 
         private fun writeMutualCorrelationToResults() {
