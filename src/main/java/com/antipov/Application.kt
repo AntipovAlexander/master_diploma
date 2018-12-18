@@ -3,7 +3,6 @@ package com.antipov
 import com.antipov.modules.*
 import com.antipov.utils.closestPowerOfTwo
 import com.antipov.utils.printTable
-import org.apache.commons.math3.stat.descriptive.AbstractStorelessUnivariateStatistic
 import org.apache.commons.math3.stat.descriptive.moment.Kurtosis
 import org.apache.commons.math3.stat.descriptive.moment.Skewness
 import org.apache.commons.math3.transform.DftNormalization

@@ -5,7 +5,7 @@ import java.util.*
 
 class FunctionDependency {
 
-    fun calculate(x: ArrayList<Float>, y: ArrayList<Float>, printDebug: Boolean = false): SortedMap<Float, LinkedHashSet<Float>> {
+    fun calculate(x: ArrayList<Float>, y: ArrayList<Float>): SortedMap<Float, LinkedHashSet<Float>> {
         val valsX = LinkedHashSet<Float>(x)
         val results = LinkedHashMap<Float, LinkedHashSet<Float>>()
 
